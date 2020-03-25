@@ -1,0 +1,167 @@
+from tkinter import *
+import numpy as np
+
+# 判断矩阵获取
+numberBox_list_entry=[]
+
+# 判断矩阵
+numberBox_list_list=[]
+
+def open_window():
+    # 创建窗口
+    window = Tk()
+    window.title('AHP权重计算')
+    window.geometry('600x400')
+
+    # 组件创建
+
+    # 主窗体
+    global main_frame
+    main_frame=Frame(window)
+    main_frame.pack()
+
+    # 标题
+    global title_frame
+    title_frame=Frame(main_frame)
+    title_frame.pack(pady=10,fill='both')
+
+    # 解释文字
+    ex_Text=Label(title_frame,text='请输入因子数')
+    ex_Text.grid(row=0,column=0,padx=20)
+
+    # 选择数量
+    global number_entry
+    number_entry=Entry(title_frame)
+    number_entry.grid(row=0,column=1,padx=20)
+
+    # 确认按钮
+    sub_button=Button(title_frame,text='确认',command=create_numberBox)
+    sub_button.grid(row=0,column=2,padx=20)
+
+    # 打开窗口
+    window.mainloop()
+
+# 判断矩阵输入
+def create_numberBox():
+    # n*n
+    n=int(number_entry.get())
+    title_frame.pack_forget()
+
+    global content_frame
+    content_frame=Frame(main_frame)
+    content_frame.pack()
+
+    title_label=Label(content_frame,text='请输入判断矩阵')
+    title_label.pack()
+
+    numberBox_entry=Frame(content_frame)
+    numberBox_entry.pack()
+
+    for j in range(n):
+        cach_list=[]
+        numberWith_int=6
+        for k in range(n):
+            acach_entry=""
+            if k<j:
+                # 临时存储entry
+                acach_entry=Entry(numberBox_entry,width=numberWith_int)
+                # 放置到界面上
+                acach_entry.grid(row=j,column=k,padx=5,pady=5)
+                # 加入到判断矩阵获取list内
+                cach_list.append(acach_entry)
+
+            if k >= j:
+                # 临时存储entry
+                if k>j:
+                    acach_label = Label(numberBox_entry, width=numberWith_int,text='自动获取')
+                else:
+                    acach_label = Label(numberBox_entry, width=numberWith_int, text=1)
+                # 放置到界面上
+                acach_label.grid(row=j, column=k, padx=5, pady=5)
+                # 加入到判断矩阵获取list内
+                cach_list.append(acach_label)
+
+        numberBox_list_entry.append(cach_list)
+
+    operate_frame=Frame(content_frame)
+    operate_frame.pack()
+
+    sub_button = Button(operate_frame, text='确定', width=20,command=confirm)
+    sub_button.pack(side='left',padx=10)
+
+    cancel_button=Button(operate_frame,text='取消',width=20,command=cancel)
+    cancel_button.pack(side='right',padx=10)
+
+    global ansShow_text
+    ansShow_text = Text(content_frame)
+    ansShow_text.pack(padx=20)
+
+# 点击确定之后开始计算
+def confirm():
+    numberBox_list_list=get_numberBoxList()
+    weight_list_list=get_weight(numberBox_list_list)
+
+    # 拼接字符串
+    text=""
+    for index,i in enumerate(weight_list_list):
+        s="指标{}：{}\n".format(index+1,i)
+        text+=s
+
+    try:
+        ansShow_text.delete('1.0','end')
+    except:
+        pass
+    ansShow_text.insert("insert", text)
+
+
+
+# 获取判断矩阵
+def get_numberBoxList():
+    cach_list=[]
+    for j in range(len(numberBox_list_entry)):
+        acach_list=[]
+        value=1
+        for k in range(len(numberBox_list_entry)):
+            try:
+                value=eval(numberBox_list_entry[j][k].get())
+            except:
+                value=1
+            if k<j:
+                acach_list.append(value)
+            elif k == j:
+                acach_list.append(1)
+            elif k>j:
+                acach_list.append(1/value)
+
+        cach_list.append(acach_list)
+    return cach_list
+
+# 获得权重
+def get_weight(ques_list_list):
+    ans_list=[]
+    # 转化为numpy数据格式
+    ques_numpy=np.array(ques_list_list)
+
+    # 归一化矩阵
+    one_numpy=[]
+    # 列相加之后
+    colSum_numpy = np.cumsum(ques_numpy, axis=0)[-1]
+    for i in range(len(colSum_numpy)):
+        ans=ques_numpy[:,i]*(1/colSum_numpy[i])
+        one_numpy.append(ans)
+    one_numpy=np.array(one_numpy).T
+
+    # 获得权重
+    for i in range(len(one_numpy)):
+        sum_float=np.cumsum(one_numpy[i])[-1]/len(one_numpy)
+        ans_list.append(format(sum_float,".3f"))
+
+    return ans_list
+
+def cancel():
+    title_frame.pack()
+    content_frame.destroy()
+
+
+if __name__=="__main__":
+    open_window()
